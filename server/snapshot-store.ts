@@ -94,8 +94,9 @@ export class SnapshotStore {
   }
 
   private initDatabase() {
-    // Enable WAL mode for high performance concurrent reading and non-blocking writes
+    // Enable WAL mode and busy timeout for high performance concurrent reading and non-blocking writes
     this.db.exec(`
+      PRAGMA busy_timeout = 5000;
       PRAGMA journal_mode = WAL;
       PRAGMA synchronous = NORMAL;
       PRAGMA foreign_keys = ON;

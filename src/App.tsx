@@ -79,11 +79,21 @@ export function App() {
   const [profiles, setProfiles] = useState<string[]>(['default']);
   const [profileMetadata, setProfileMetadata] = useState<import('./types').ProfileMetadata[]>([]);
   const [sessionConfig, setSessionConfig] = useState<AwsSessionConfig>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_SESSION);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (typeof parsed.isDemoMode === 'boolean') {
+          return parsed;
+        }
+      }
+    } catch (e) {}
+    // Default to Live AWS mode
     return {
       profile: 'default',
-      region: 'us-east-1',
-      isDemoMode: true, // Switched to Demo Mode for README screenshot
-      roleSessionName: 'Periscope-Demo',
+      region: 'us-west-2',
+      isDemoMode: false,
+      roleSessionName: 'Periscope-Session',
     };
   });
 

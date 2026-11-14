@@ -52,6 +52,19 @@ export const SwitchRoleModal: React.FC<SwitchRoleModalProps> = ({
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
+  // Synchronize modal state whenever modal opens or currentConfig changes
+  useEffect(() => {
+    if (isOpen) {
+      setIsDemoMode(!!currentConfig.isDemoMode);
+      setSelectedProfile(currentConfig.profile || 'default');
+      setSelectedRegion(currentConfig.region || 'ap-south-1');
+      setRoleArn(currentConfig.roleArn || '');
+      setRoleSessionName(currentConfig.roleSessionName || 'Periscope-Session');
+      setExternalId(currentConfig.externalId || '');
+      setTestResult(null);
+    }
+  }, [isOpen, currentConfig]);
+
   // When changing profile, auto-switch to its configured region if available
   const handleProfileChange = (profileName: string) => {
     setSelectedProfile(profileName);
