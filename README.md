@@ -110,8 +110,8 @@ npx periscope cost --instances 8 --vcpus 64
 ### 2. Installation
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/periscope.git
-cd periscope
+git clone https://github.com/mohit-k-s/Periscope.git
+cd Periscope
 
 # Install dependencies
 npm install
