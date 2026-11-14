@@ -2,9 +2,11 @@
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="public/logo-dark.png">
     <source media="(prefers-color-scheme: light)" srcset="public/logo-light.png">
-    <img alt="Periscope Logo" src="public/logo-dark.png" width="440">
+    <img alt="Periscope Logo" src="public/logo-dark.png" width="140" style="border-radius: 18px;">
   </picture>
 </p>
+
+<h1 align="center">Periscope</h1>
 
 <p align="center">
   <strong>Sub-second RDS Performance Insights, 5-minute selective snapshot vault & autonomous toxic query detection.</strong>
