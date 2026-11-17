@@ -9,11 +9,12 @@
 <h1 align="center">Periscope</h1>
 
 <p align="center">
-  <strong>RDS database load with optional 1-second granularity, 5-minute snapshots &amp; autonomous toxic query detection.</strong>
+  <strong>Keep your own RDS performance history.</strong>
+  <br>
+  Periscope is a self-hosted dashboard and SQLite archive for AWS Performance Insights data.
 </p>
 
 <p align="center">
-  <a href="#autonomous-toxic-query-radar"><img src="https://img.shields.io/badge/Toxic_Query_Radar-Zero--Downtime_DDL-amber?style=flat-square" alt="Radar"></a>
   <a href="#test-suite"><img src="https://img.shields.io/badge/Tests-73_Passing-brightgreen?style=flat-square" alt="Tests"></a>
   <a href="#license"><img src="https://img.shields.io/badge/License-MIT-purple?style=flat-square" alt="License"></a>
 </p>
@@ -32,18 +33,11 @@
 
 ## 🔭 Why Periscope?
 
-Amazon CloudWatch Database Insights provides Average Active Sessions (AAS) diagnostics for RDS and Aurora. Periscope uses the existing Performance Insights APIs to add an incident view and a self-hosted history of selected metrics.
+Choose the RDS or Aurora instances you want to record. Periscope reads their metrics through the Performance Insights APIs using read-only AWS IAM permissions. It needs no database connection or database credentials.
 
-1. **Longer AWS-managed history**: Database Insights Standard includes up to seven days of detailed metrics at no additional retention charge and offers paid retention from 1 to 24 months. [AWS CloudWatch pricing](https://aws.amazon.com/cloudwatch/pricing/)
-2. **Selective local history**: Periscope lets you choose which databases to snapshot and how long to keep their telemetry in SQLite.
-3. **Short load spikes**: Zoom into a short window to see how sampled database load changes from second to second, where AWS returns one-second data.
-4. **No Actionable Remediation**: AWS shows you that a query is pegging CPU or waiting on `IO:DataFileRead`, but leaves you to diagnose execution plans, temporary file bloat, and index creation.
-
-**Periscope solves this:**
-- ⚡ **1-second database load**: Request one-second AAS buckets for short incident windows.
-- 💾 **Periscope Snapshot Vault**: A background process that captures telemetry for selected databases at five-minute intervals and stores it locally in SQLite.
-- 🛡️ **Autonomous Toxic Query Radar**: Flags IO chokers, row lock deadlocks, and memory buffer bloat with copy-pasteable, zero-downtime remediation DDLs (`CREATE INDEX CONCURRENTLY`).
-- 🎨 **Architectural Drawing-Board Aesthetic**: A precision-crafted UI in both Dark and Light modes featuring interactive hover legends, execution latency metrics, and smooth docking transitions.
+- **Keep history in SQLite.** Record five-minute snapshots on the host where you run Periscope, even with Database Insights Standard set to seven-day retention.
+- **Investigate incidents in one dashboard.** Browse archived database load, waits, and top SQL. For short AWS-backed windows, request one-second load buckets when AWS has that data.
+- **Take the data with you.** Export stored telemetry as JSON for incident reviews or offline analysis.
 
 ---
 
