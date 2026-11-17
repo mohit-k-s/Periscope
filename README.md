@@ -14,7 +14,6 @@
 
 <p align="center">
   <a href="#key-features"><img src="https://img.shields.io/badge/AAS_Granularity-1s_Ultra--Res-blue?style=flat-square" alt="1s Granularity"></a>
-  <a href="#snapshot-vault--cost-analysis"><img src="https://img.shields.io/badge/AWS_PI_Retention_Savings-99.9%25-emerald?style=flat-square" alt="Savings"></a>
   <a href="#autonomous-toxic-query-radar"><img src="https://img.shields.io/badge/Toxic_Query_Radar-Zero--Downtime_DDL-amber?style=flat-square" alt="Radar"></a>
   <a href="#test-suite"><img src="https://img.shields.io/badge/Tests-73_Passing-brightgreen?style=flat-square" alt="Tests"></a>
   <a href="#license"><img src="https://img.shields.io/badge/License-MIT-purple?style=flat-square" alt="License"></a>
@@ -34,16 +33,16 @@
 
 ## 🔭 Why Periscope?
 
-AWS RDS Performance Insights is the gold standard for Average Active Sessions (AAS) diagnostics, but in practice, production engineering teams hit four major friction points:
+Amazon CloudWatch Database Insights provides Average Active Sessions (AAS) diagnostics for RDS and Aurora. Periscope uses the existing Performance Insights APIs to add an incident view and a self-hosted history of selected metrics.
 
-1. **The 7-Day Free Tier Cliff**: Beyond 7 days, AWS mandates continuous retention billing ($0.0125/vCPU/hr) billed across every single provisioned vCPU in the database. A modest 64-vCPU production cluster incurs **~$7,000/year** just to retain performance history.
-2. **Estate-Wide Waste**: In AWS, you cannot selectively snapshot only mission-critical databases for long retention—it is all or nothing per instance.
+1. **Longer AWS-managed history**: Database Insights Standard includes up to seven days of detailed metrics at no additional retention charge and offers paid retention from 1 to 24 months. [AWS CloudWatch pricing](https://aws.amazon.com/cloudwatch/pricing/)
+2. **Selective local history**: Periscope lets you choose which databases to snapshot and how long to keep their telemetry in SQLite.
 3. **Aggressive Downsampling & Lag**: Standard AWS console charts downsample micro-spikes. When an outage occurs for 45 seconds, the console often rounds it away into 1-minute or 5-minute smoothed averages.
 4. **No Actionable Remediation**: AWS shows you that a query is pegging CPU or waiting on `IO:DataFileRead`, but leaves you to diagnose execution plans, temporary file bloat, and index creation.
 
 **Periscope solves this:**
 - ⚡ **1-Second Micro-Incident Zoom**: Inspect true real-time spikes without downsampling loss.
-- 💾 **Periscope Snapshot Vault**: A lightweight, persistent SQLite background engine that captures 5-minute telemetry intervals, storing years of historical telemetry locally or in your private S3 bucket with **>99% cost reduction**.
+- 💾 **Periscope Snapshot Vault**: A background process that captures telemetry for selected databases at five-minute intervals and stores it locally in SQLite.
 - 🛡️ **Autonomous Toxic Query Radar**: Flags IO chokers, row lock deadlocks, and memory buffer bloat with copy-pasteable, zero-downtime remediation DDLs (`CREATE INDEX CONCURRENTLY`).
 - 🎨 **Architectural Drawing-Board Aesthetic**: A precision-crafted UI in both Dark and Light modes featuring interactive hover legends, execution latency metrics, and smooth docking transitions.
 
@@ -83,21 +82,18 @@ Periscope continuously analyzes query performance metrics and flags toxic query 
 
 ---
 
-## 💰 Economics: AWS Extended Retention vs Periscope
+## Database Insights pricing and snapshot costs
 
-AWS charges **$0.0125 per vCPU per hour** ($9.125 / vCPU-month) for 2-year retention.
+AWS migrated Performance Insights users to CloudWatch Database Insights on July 31, 2026. The existing Performance Insights APIs still provide access to the metrics Periscope collects. [AWS migration documentation](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Database-Insights.html) · [AWS CloudWatch pricing](https://aws.amazon.com/cloudwatch/pricing/)
 
-| Monitored Fleet Size | AWS PI 2-Year Retention | Periscope Snapshot Vault | Annual Savings |
-|---|---|---|---|
-| **Small (16 vCPUs)** | $1,752 / year | **$0.00** (Local) / < $2 (S3) | **> 99.8%** |
-| **Medium (64 vCPUs)** | $7,008 / year | **$0.00** (Local) / < $5 (S3) | **> 99.9%** |
-| **Large (256 vCPUs)** | $28,032 / year | **$0.00** (Local) / < $12 (S3) | **> 99.9%** |
-| **Enterprise (1024 vCPUs)** | $112,128 / year | **$0.00** (Local) / < $35 (S3) | **> 99.9%** |
+- **Standard mode** includes up to seven days of detailed metrics at no additional retention charge. For 1–24 months of paid retention, the hourly rate combines a first-month rate with an additional rate for each extra month configured. AWS bills provisioned instances per vCPU-hour and Aurora Serverless and Limitless per ACU-hour. Rates vary by Region. [AWS CloudWatch pricing](https://aws.amazon.com/cloudwatch/pricing/)
+- **Advanced mode** charges for monitored capacity and includes retention in the mode price. AWS's US East (N. Virginia) example uses **$0.0125 per vCPU-hour** for provisioned instances and **$0.003125 per ACU-hour** for Aurora Serverless. [AWS CloudWatch pricing](https://aws.amazon.com/cloudwatch/pricing/) · [Database Insights documentation](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Database-Insights.html)
 
-Calculate your exact fleet savings in one command:
-```bash
-npx periscope cost --instances 8 --vcpus 64
-```
+For an always-on fleet with 64 provisioned vCPUs in US East (N. Virginia), AWS's published example rates imply about **$1,248/year for Standard with three months of retention** (`64 × 8,760 × ($0.002054 + 2 × $0.000086)`) and **$7,008/year for Advanced mode** (`64 × 8,760 × $0.0125`). These estimates cover the respective Database Insights charges. CloudWatch Logs and API overages are billed separately. AWS includes up to one million Performance Insights API calls per month. [AWS CloudWatch pricing](https://aws.amazon.com/cloudwatch/pricing/)
+
+Periscope stores selected snapshots in SQLite and can run with the seven-day Standard retention setting. Its operating cost depends on the host, disk, backups, and API usage. The vault's history covers the metrics Periscope collects at each capture.
+
+The current Periscope cost estimates use a fixed Advanced mode rate and simplified storage assumptions. Use the AWS rates for your Region, mode, and retention period when budgeting.
 
 ---
 
@@ -162,7 +158,7 @@ periscope <command> [options]
 | `list` | Display stored snapshot spans and database sizes | `npx periscope list` |
 | `inspect` | View recent snapshots, wait events, and AAS points in terminal | `npx periscope inspect --instance prod-orders-db --hours 24` |
 | `anomalies` | Scan stored telemetry for toxic queries and print remediation DDL | `npx periscope anomalies --instance prod-orders-db` |
-| `cost` | Compute AWS retention economics and calculate ROI | `npx periscope cost --instances 12 --vcpus 96` |
+| `cost` | Run the fixed-rate estimate described in [Database Insights pricing and snapshot costs](#database-insights-pricing-and-snapshot-costs) | `npm run periscope:cost -- --instances 12 --vcpus 96` |
 | `export` | Export snapshot database telemetry to a standalone JSON file | `npx periscope export --instance prod-orders-db --out dump.json` |
 
 ---
@@ -219,4 +215,4 @@ npm run build
 
 ## 📄 License
 
-MIT License. Designed and built for engineering teams who demand complete visibility into RDS database performance without astronomical cloud retention bills.
+MIT License.
