@@ -9,11 +9,10 @@
 <h1 align="center">Periscope</h1>
 
 <p align="center">
-  <strong>Sub-second RDS Performance Insights, 5-minute selective snapshot vault & autonomous toxic query detection.</strong>
+  <strong>RDS database load with optional 1-second granularity, 5-minute snapshots &amp; autonomous toxic query detection.</strong>
 </p>
 
 <p align="center">
-  <a href="#key-features"><img src="https://img.shields.io/badge/AAS_Granularity-1s_Ultra--Res-blue?style=flat-square" alt="1s Granularity"></a>
   <a href="#autonomous-toxic-query-radar"><img src="https://img.shields.io/badge/Toxic_Query_Radar-Zero--Downtime_DDL-amber?style=flat-square" alt="Radar"></a>
   <a href="#test-suite"><img src="https://img.shields.io/badge/Tests-73_Passing-brightgreen?style=flat-square" alt="Tests"></a>
   <a href="#license"><img src="https://img.shields.io/badge/License-MIT-purple?style=flat-square" alt="License"></a>
@@ -37,11 +36,11 @@ Amazon CloudWatch Database Insights provides Average Active Sessions (AAS) diagn
 
 1. **Longer AWS-managed history**: Database Insights Standard includes up to seven days of detailed metrics at no additional retention charge and offers paid retention from 1 to 24 months. [AWS CloudWatch pricing](https://aws.amazon.com/cloudwatch/pricing/)
 2. **Selective local history**: Periscope lets you choose which databases to snapshot and how long to keep their telemetry in SQLite.
-3. **Aggressive Downsampling & Lag**: Standard AWS console charts downsample micro-spikes. When an outage occurs for 45 seconds, the console often rounds it away into 1-minute or 5-minute smoothed averages.
+3. **Short load spikes**: Zoom into a short window to see how sampled database load changes from second to second, where AWS returns one-second data.
 4. **No Actionable Remediation**: AWS shows you that a query is pegging CPU or waiting on `IO:DataFileRead`, but leaves you to diagnose execution plans, temporary file bloat, and index creation.
 
 **Periscope solves this:**
-- ⚡ **1-Second Micro-Incident Zoom**: Inspect true real-time spikes without downsampling loss.
+- ⚡ **1-second database load**: Request one-second AAS buckets for short incident windows.
 - 💾 **Periscope Snapshot Vault**: A background process that captures telemetry for selected databases at five-minute intervals and stores it locally in SQLite.
 - 🛡️ **Autonomous Toxic Query Radar**: Flags IO chokers, row lock deadlocks, and memory buffer bloat with copy-pasteable, zero-downtime remediation DDLs (`CREATE INDEX CONCURRENTLY`).
 - 🎨 **Architectural Drawing-Board Aesthetic**: A precision-crafted UI in both Dark and Light modes featuring interactive hover legends, execution latency metrics, and smooth docking transitions.
@@ -50,7 +49,12 @@ Amazon CloudWatch Database Insights provides Average Active Sessions (AAS) diagn
 
 ## ✨ Key Features
 
-### 📊 True Average Active Sessions (AAS) & Wait Breakdown
+### 📊 Average Active Sessions (AAS) & Wait Breakdown
+
+For AWS-backed views, Periscope requests `db.load.avg` with `PeriodInSeconds=1` when you select **1s** or use **Auto** on a window of 10 minutes or less. Auto requests coarser buckets for longer windows. The API's one-second period describes the resolution of sampled database load. Live mode refreshes every 60 seconds, and the dashboard can carry CPU, memory, I/O, and connection readings across gaps between counter samples. [AWS metric API](https://docs.aws.amazon.com/performance-insights/latest/APIReference/API_GetResourceMetrics.html) · [AWS database load sampling](https://docs.aws.amazon.com/performance-insights/latest/APIReference/API_DescribeDimensionKeys.html)
+
+The snapshot daemon requests one-minute metrics and aggregates them into five-minute snapshots. In archive views, the chart's granularity label can reflect the requested period even when the underlying data consists of five-minute snapshots.
+
 Decomposes database workload across 6 standard dimensions:
 - **CPU**: Active computation threads (`CPU`).
 - **Disk I/O**: Sequential reads, temp table writes (`IO:DataFileRead`, `IO:BufFileRead`).
@@ -59,12 +63,13 @@ Decomposes database workload across 6 standard dimensions:
 - **Client & Network**: Slow clients, synchronous socket reads (`Client:ClientRead`).
 - **Other**: Background vacuuming, checkpoint flushes.
 
-### 📈 Console-Aligned Query Metrics
-Top SQL table populates metrics matching the native AWS PI engine:
-- **Calls/sec**: Frequency of execution across microservices.
-- **Rows/sec**: Volume of data scanned and returned.
-- **Avg Latency (ms)**: Real-time execution duration per call.
-- **Wait Breakdown Bars**: Visual representation of the exact wait event share for each SQL digest.
+### 📈 Top SQL Metrics
+The Top SQL table uses Performance Insights statistics for the selected window where available. When AWS omits some statistics, Periscope may estimate call rate, row rate, or average latency from the available values.
+
+- **Calls/sec**: Query execution rate.
+- **Rows/sec**: Row throughput reported for the query.
+- **Avg Latency (ms)**: Average execution time per call over the selected window.
+- **Wait Breakdown Bars**: Share of the returned wait-event load for each SQL digest.
 
 ### 🛡️ Autonomous Toxic Query Radar
 Periscope continuously analyzes query performance metrics and flags toxic query archetypes:
